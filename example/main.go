@@ -19,10 +19,6 @@ var (
 	scheme = runtime.NewScheme()
 )
 
-func init() {
-	scheme.AddKnownTypes(types.GroupVersion, &types.Demo{}, &types.DemoList{})
-}
-
 type TestGetter struct {
 }
 
@@ -31,7 +27,7 @@ func (t *TestGetter) Get(ctx context.Context, name string, options *metav1.GetOp
 	namespace, _ := genericapirequest.NamespaceFrom(ctx)
 	obj.Name = "some-demo-object"
 	obj.Namespace = namespace
-	
+
 	return obj, nil
 }
 
@@ -45,7 +41,9 @@ func (t *TestGetter) NamespaceScoped() bool {
 
 func main() {
 	b := &builder.APIServerBase{}
-	b.WithScheme(scheme)
+	b.WithScheme(func(scheme *runtime.Scheme) {
+		scheme.AddKnownTypes(types.GroupVersion, &types.Demo{}, &types.DemoList{})
+	})
 	b.WithStorage(types.GroupVersion.WithResource("demos"), &TestGetter{})
 	b.Flags().Parse(os.Args)
 
