@@ -44,7 +44,14 @@ func main() {
 	b.WithScheme(func(scheme *runtime.Scheme) {
 		scheme.AddKnownTypes(types.GroupVersion, &types.Demo{}, &types.DemoList{})
 	})
-	b.WithStorage(types.GroupVersion.WithResource("demos"), &TestGetter{})
+	b.WithStorage(types.GroupVersion.WithResource("demos"),
+		builder.NewStorageBuilder().
+			WithNewFunc(func() runtime.Object { return &types.Demo{} }).
+			WithNewListFunc(func() runtime.Object { return &types.DemoList{} }).
+			WithCreateStrategy(types.DemoStrategy{}).
+			WithUpdateStrategy(types.DemoStrategy{}).
+			WithDeleteStrategy(types.DemoStrategy{}).
+			Build())
 	b.Flags().Parse(os.Args)
 
 	defer klog.Flush()

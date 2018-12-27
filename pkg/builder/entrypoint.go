@@ -28,7 +28,6 @@ import (
 	// the main k8s.io/apiserver repo imports it anyway.
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/apiserver/pkg/util/logs"
 	"k8s.io/klog"
@@ -75,7 +74,7 @@ type APIServerBase struct {
 	config *apiserver.Config
 
 	// storage is kept here to avoid needed into instantiate config earlier
-	storage map[schema.GroupVersionResource]apiserver.StorageInfo
+	storage map[schema.GroupVersionResource]StorageBuilderFunc
 }
 
 // InstallFlags installs the minimum required set of flags into the flagset.
@@ -90,6 +89,7 @@ func (b *APIServerBase) InstallFlags() {
 		b.Authentication.AddFlags(b.FlagSet)
 		b.Authorization.AddFlags(b.FlagSet)
 		b.Features.AddFlags(b.FlagSet)
+		b.Etcd.AddFlags(b.FlagSet)
 
 		// TODO(directxman12): when we finally fix the "registering flags in init" problem,
 		// also call logs.AddFlags, and flag.Set("logtostderr", "true") here.
@@ -119,18 +119,15 @@ func (b *APIServerBase) Flags() *pflag.FlagSet {
 
 // WithStorage adds the given storage to the set of resources served by this API server, to
 // later be passed to the Config when it's instantiated.
-func (b *APIServerBase) WithStorage(gvr schema.GroupVersionResource, storage rest.Storage) error {
+func (b *APIServerBase) WithStorage(gvr schema.GroupVersionResource, storageBuilderFunc StorageBuilderFunc) error {
 	if _, exists := b.storage[gvr]; exists {
 		return fmt.Errorf("attempting to add duplicate storage for %s", gvr)
 	}
 	if b.storage == nil {
-		b.storage = make(map[schema.GroupVersionResource]apiserver.StorageInfo)
+		b.storage = make(map[schema.GroupVersionResource]StorageBuilderFunc)
 	}
 
-	b.storage[gvr] = apiserver.StorageInfo{
-		Resource: gvr,
-		Storage:  storage,
-	}
+	b.storage[gvr] = storageBuilderFunc
 
 	return nil
 }
@@ -156,8 +153,12 @@ func (b *APIServerBase) Config() (*apiserver.Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		for _, storageInfo := range b.storage {
-			config.Storage = append(config.Storage, storageInfo)
+
+		for gvr, storageBuilder := range b.storage {
+			config.Storage = append(config.Storage, apiserver.StorageInfo{
+				Storage:  storageBuilder(gvr.GroupResource(), config.GenericConfig().RESTOptionsGetter),
+				Resource: gvr,
+			})
 		}
 		b.config = config
 	}
