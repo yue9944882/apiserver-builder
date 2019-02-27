@@ -17,7 +17,6 @@ limitations under the License.
 package server
 
 import (
-	"flag"
 	"fmt"
 	"io"
 
@@ -40,6 +39,8 @@ import (
 	openapinamer "k8s.io/apiserver/pkg/endpoints/openapi"
 	"k8s.io/apiserver/pkg/util/logs"
 	openapi "k8s.io/kube-openapi/pkg/common"
+	_ "k8s.io/apiserver/pkg/util/logs"
+	"flag"
 )
 
 var GetOpenApiDefinition openapi.GetOpenAPIDefinitions
@@ -70,11 +71,7 @@ func StartApiServer(etcdPath string, apis []*builders.APIGroupBuilder, openapide
 
 	// To disable providers, manually specify the list provided by getKnownProviders()
 	cmd, _ := NewCommandStartServer(etcdPath, os.Stdout, os.Stderr, apis, wait.NeverStop, title, version)
-	if logflag := flag.CommandLine.Lookup("v"); logflag != nil {
-		level := logflag.Value.(*klog.Level)
-		levelPtr := (*int32)(level)
-		cmd.Flags().Int32Var(levelPtr, "loglevel", 0, "Set the level of log output")
-	}
+
 	cmd.Flags().AddFlagSet(pflag.CommandLine)
 	if err := cmd.Execute(); err != nil {
 		panic(err)
@@ -124,7 +121,6 @@ func NewCommandStartServer(etcdPath string, out, errOut io.Writer, builders []*b
 	}
 
 	flags := cmd.Flags()
-	klog.InitFlags(nil)
 	flags.BoolVar(&o.PrintBearerToken, "print-bearer-token", false,
 		"Print a curl command with the bearer token to test the server")
 	flags.BoolVar(&o.PrintOpenapi, "print-openapi", false,
@@ -133,6 +129,19 @@ func NewCommandStartServer(etcdPath string, out, errOut io.Writer, builders []*b
 		"Setup delegated auth")
 	//flags.StringVar(&o.Kubeconfig, "kubeconfig", "", "Kubeconfig of apiserver to talk to.")
 	o.RecommendedOptions.AddFlags(flags)
+
+	klogFlags := flag.NewFlagSet("klog", flag.ExitOnError)
+	klog.InitFlags(klogFlags)
+	flags.AddGoFlagSet(klogFlags)
+
+	// Sync the glog and klog flags.
+	klogFlags.VisitAll(func(f *flag.Flag) {
+		goFlag := flag.CommandLine.Lookup(f.Name)
+		if goFlag != nil {
+			goFlag.Value.Set(f.Value.String())
+		}
+	})
+
 	return cmd, o
 }
 
