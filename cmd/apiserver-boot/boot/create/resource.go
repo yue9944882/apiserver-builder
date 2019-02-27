@@ -26,6 +26,10 @@ import (
 	"github.com/kubernetes-incubator/apiserver-builder-alpha/cmd/apiserver-boot/boot/util"
 	"github.com/markbates/inflect"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/controller"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
 var kindName string
@@ -85,6 +89,19 @@ func createResource(boilerplate string) {
 		util.Repo,
 		inflect.NewDefaultRuleset().Pluralize(kindName),
 		nonNamespacedKind,
+	}
+
+	if err := (&scaffold.Scaffold{}).Execute(input.Options{}, &controller.Controller{
+		Resource: &resource.Resource{
+			Namespaced:                 !nonNamespacedKind,
+			Group:                      groupName,
+			Version:                    versionName,
+			Kind:                       kindName,
+			Resource:                   resourceName,
+			CreateExampleReconcileBody: true,
+		},
+	}); err != nil {
+		log.Fatal(err)
 	}
 
 	found := false

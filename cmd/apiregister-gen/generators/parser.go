@@ -29,6 +29,8 @@ import (
 	"k8s.io/gengo/args"
 	"k8s.io/gengo/generator"
 	"k8s.io/gengo/types"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/controller"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 type APIs struct {
@@ -169,7 +171,7 @@ type APIsBuilder struct {
 	GroupNames      sets.String
 
 	APIs        *APIs
-	Controllers []Controller
+	Controllers []controller.Controller
 
 	ByGroupKindVersion    map[string]map[string]map[string]*APIResource
 	ByGroupVersionKind    map[string]map[string]map[string]*APIResource
@@ -193,13 +195,19 @@ func NewAPIsBuilder(context *generator.Context, arguments *args.GeneratorArgs) *
 }
 
 func (b *APIsBuilder) ParseControllers() {
+	for group, apiGroup := range b.APIs.Groups {
+
+	}
 	for _, c := range b.context.Order {
 		if IsController(c) {
+			c.
 			tags := ParseControllerTag(b.GetControllerTag(c))
 			repo := strings.Split(c.Name.Package, "/pkg/controller")[0]
 			pkg := b.context.Universe[c.Name.Package]
-			b.Controllers = append(b.Controllers, Controller{
-				tags.gvk, tags.resource, pkg, repo})
+			b.Controllers = append(b.Controllers, controller.Controller{
+				Resource: &resource.Resource{
+					Namespaced: b.APIs.Groups[c.]
+				}})
 		}
 	}
 }
