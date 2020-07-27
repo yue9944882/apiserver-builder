@@ -8,12 +8,17 @@ class ApiserverBoot < Formula
         :tag => "v1.18.0",
         :revision => "95dca1d34e91d6e76c50fa4f272a77f573fd7558"
       depends_on "bazel" => :build
-      def install
-        system "bazel","build","--platforms=@io_bazel_rules_go//go/toolchain:darwin_amd64","cmd:apiserver-builder"
-      end
     elsif OS.linux?
       #url "https://ftp.ncbi.nih.gov/toolbox/ncbi_tools/converters/by_program/tbl2asn/linux64.tbl2asn.gz"
       #sha256 "38560dd0764d1cfa7e139c65285b3194bacaa4bd8ac09f60f5e2bb8027cc6ca2"
+    end
+
+    def install
+      if OS.mac?
+        system "bazel","build","--platforms=@io_bazel_rules_go//go/toolchain:darwin_amd64","cmd:apiserver-builder"
+      elsif OS.linux?
+        system "bazel","build","--platforms=@io_bazel_rules_go//go/toolchain:linux_amd64","cmd:apiserver-builder"
+      end
     end
   
     test do
