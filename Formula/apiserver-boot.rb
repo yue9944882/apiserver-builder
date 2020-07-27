@@ -5,7 +5,7 @@ class ApiserverBoot < Formula
     if OS.mac?
       url "https://github.com/kubernetes-sigs/apiserver-builder-alpha.git",
         :using => :git,
-        :version => "v1.18.0",
+        :tag => "v1.18.0",
         :revision => "95dca1d34e91d6e76c50fa4f272a77f573fd7558"
       depends_on "bazel" => :build
       def install
