@@ -3,7 +3,7 @@ class ApiserverBoot < Formula
     desc "Scaffolding Toolkit for APIServer Aggregation"
     homepage "https://github.com/kubernetes-sigs/apiserver-builder-alpha"
     if OS.mac?
-      url "https://github.com/kubernetes-sigs/apiserver-builder-alpha.git"
+      url "https://github.com/kubernetes-sigs/apiserver-builder-alpha.git",
         :using => :git,
         :revision => "95dca1d34e91d6e76c50fa4f272a77f573fd7558"
       depends_on "bazel" => :build
