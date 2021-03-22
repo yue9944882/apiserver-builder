@@ -184,7 +184,6 @@ did you have WithLocalDebugExtension() in your apiserver? (if you're using kuber
 	flags := []string{
 		fmt.Sprintf("--etcd-servers=%s", etcd),
 		fmt.Sprintf("--secure-port=%v", securePort),
-		fmt.Sprintf("--feature-gates=APIPriorityAndFairness=false"), // TODO: remove this line after https://github.com/kubernetes/kubernetes/pull/97957 merged
 	}
 
 	if disableMTLS {
